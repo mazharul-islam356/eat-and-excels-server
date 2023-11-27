@@ -49,13 +49,66 @@ async function run() {
     })
 
 
+    // verify middlewares
+    const verifyToken = (req,res,next) =>{
+      // console.log('inserted in verify middlewares',req.headers.authorization);
+
+      if(!req.headers.authorization){
+        return res.status(401).send({message: 'unauthorized access'})
+      }
+      const token = req.headers.authorization.split(' ')[1]
+      jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(error,decoded)=>{
+        if(error){
+          return res.status(401).send({message: 'unauthorized access'})
+        }
+        req.decoded = decoded;
+        next()
+      })
+
+    }
+
+
+    // verify admin
+    const verifyAdmin = async (req,res,next) =>{
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query)
+      const isAdmin = user?.role === 'admin'
+     
+      if(!isAdmin){
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+    }
 
 
     // user api
-    app.get('/users', async(req,res)=>{
+    app.get('/users', verifyToken, verifyAdmin,  async(req,res)=>{
       const result = await usersCollection.find().toArray()
       res.send(result)
     })
+
+    
+
+
+    app.get('/users/admin/:email',verifyToken, async(req,res)=>{
+      const email = req.params.email
+      if(email !== req.decoded.email){
+        return res.status(403).send({message: 'forbidden access'})
+      }
+
+      const query = {email: email}
+      const user = await usersCollection.findOne(query)
+      console.log(user);
+      let admin = false;
+      if(user){
+        admin = user?.role === 'admin'
+      }
+      console.log('isadmin.....',admin);
+      res.send({admin})
+    })
+
+
+
 
     app.post('/users', async(req,res)=>{
       const user = req.body
@@ -83,14 +136,18 @@ async function run() {
     })
 
 
-
     // all data api
     app.get('/allData',async(req,res)=>{
       const result = await allDataCollection.find().toArray()
       res.send(result)
     })
 
-
+    app.post('/allData', async(req, res) => {
+      const user = req.body;    
+      const result = await allDataCollection.insertOne(user);
+      res.send(result);
+      console.log(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
