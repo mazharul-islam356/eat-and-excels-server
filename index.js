@@ -1,3 +1,4 @@
+
 const express = require('express')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
@@ -5,6 +6,7 @@ const cors = require('cors')
 const jwt = require("jsonwebtoken");
 const dotenv = require('dotenv')
 dotenv.config()
+const stripe = require('stripe')(process.env.STRYPE_SECRET_KEY);
 const port = process.env.PORT || 5001;
 
 // middlewar
@@ -35,6 +37,8 @@ async function run() {
     // collection name
     const allDataCollection = client.db("finalProjectDB").collection("allData");
     const usersCollection = client.db("finalProjectDB").collection("users");
+    const reviewsCollection = client.db("finalProjectDB").collection("reviews");
+    const upcommingCollection = client.db("finalProjectDB").collection("upcomming");
 
 
 
@@ -44,7 +48,7 @@ async function run() {
     app.post('/jwt', async(req,res)=>{
       const user = req.body;
       const token = jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{
-      expiresIn: '1h'});
+      expiresIn: '2h'});
       res.send({token});
     })
 
@@ -82,12 +86,27 @@ async function run() {
 
 
     // user api
-    app.get('/users', verifyToken, verifyAdmin,  async(req,res)=>{
+    app.get('/users', verifyToken,   async(req,res)=>{
       const result = await usersCollection.find().toArray()
       res.send(result)
     })
 
     
+    // delete
+    app.delete("/allData/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log("id", id);
+      const query = {
+        _id: new ObjectId(id),
+      };
+      const result = await allDataCollection.deleteOne(query);
+      console.log(result);
+      res.send(result);
+    });
+
+   
+
+
 
 
     app.get('/users/admin/:email',verifyToken, async(req,res)=>{
@@ -137,10 +156,6 @@ async function run() {
 
 
     // all data api
-    app.get('/allData',async(req,res)=>{
-      const result = await allDataCollection.find().toArray()
-      res.send(result)
-    })
 
     app.post('/allData', async(req, res) => {
       const user = req.body;    
@@ -148,6 +163,107 @@ async function run() {
       res.send(result);
       console.log(result);
     });
+
+    app.get('/allData',async(req,res)=>{
+      const result = await allDataCollection.find().toArray()
+      res.send(result)
+    })
+    
+    app.get('/allData',async(req,res)=>{
+      const email = req.query.email
+      const query = { email: email }
+      const result = await allDataCollection.find(query).toArray()
+      res.send(result)
+    })
+
+
+    app.post('/upcoming', async(req, res) => {
+      const user = req.body;    
+      const result = await upcommingCollection.insertOne(user);
+      res.send(result);
+      console.log(result);
+    });
+
+
+    app.get('/upcoming',async(req,res)=>{
+      const result = await upcommingCollection.find().toArray()
+      res.send(result)
+    })
+
+
+    
+    
+
+    app.get('/allData/:id',async(req,res)=>{
+      const id=req.params.id
+      const query={_id: new ObjectId(id)}
+      const result= await allDataCollection.findOne(query)
+      res.send(result)
+    })
+
+    // update data
+
+    app.put('/allData/:id', async (req, res) => {
+      const id = req.params.id
+      const filter = { _id: new ObjectId(id) }
+        const options = { upsert: true }
+        const updatedData = req.body
+        const data = {
+          $set: {
+            name:updatedData.name,
+            image:updatedData.image, 
+            title:updatedData.title, 
+            description:updatedData.description, 
+            
+          }
+
+        }
+
+      const result = await allDataCollection.updateOne(filter,data,options)
+      res.send(result)
+    })
+
+
+  
+
+    // review
+    app.post('/reviews', async(req,res)=>{
+      const review = req.body;
+      const result = await reviewsCollection.insertOne(review);
+      res.send(result)
+    })
+
+
+    app.get('/reviews',async(req,res)=>{
+      const result = await reviewsCollection.find().toArray()
+      res.send(result)
+    })
+
+    // payment
+    app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
+      console.log(price);
+      const amount = parseInt(price * 100);
+      console.log(amount, 'amount inside the intent')
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    });
+
+
+
+
+
+
+
+    
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
