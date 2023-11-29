@@ -39,6 +39,7 @@ async function run() {
     const usersCollection = client.db("finalProjectDB").collection("users");
     const reviewsCollection = client.db("finalProjectDB").collection("reviews");
     const upcommingCollection = client.db("finalProjectDB").collection("upcomming");
+    const cardCollection = client.db("finalProjectDB").collection("card");
 
 
 
@@ -258,7 +259,10 @@ async function run() {
     });
 
 
-
+    app.get('/create-payment-intent',async(req,res)=>{
+      const result = await cardCollection.find().toArray()
+      res.send(result)
+    })
 
 
 
