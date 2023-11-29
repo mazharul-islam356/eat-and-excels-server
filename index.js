@@ -41,6 +41,7 @@ async function run() {
     const upcommingCollection = client.db("finalProjectDB").collection("upcomming");
     const cardCollection = client.db("finalProjectDB").collection("card");
     const memberShipCollection = client.db("finalProjectDB").collection("memberShip");
+    const memberShipPayCollection = client.db("finalProjectDB").collection("memberShipPay");
 
 
     // jwt api
@@ -248,19 +249,19 @@ async function run() {
 
     // })
 
-    app.get('/memberShipp',async(req,res)=>{
-      const result = await memberShipCollection.find().toArray()
-      console.log(result);
-      res.send(result)
-    })
 
 
-
-
-
-
-
-
+    app.get('/memberShipp', async (req, res) => {
+      try {
+        const result = await memberShipCollection.find().toArray();
+        console.log(result);
+        res.send(result);
+      } catch (error) {
+        console.error('Error retrieving member data:', error);
+        res.status(500).send('Error retrieving member data');
+      }
+    });
+    
 
     // payment
     app.post('/create-payment-intent', async (req, res) => {
@@ -279,6 +280,15 @@ async function run() {
         clientSecret: paymentIntent.client_secret
       })
     });
+
+    app.post('/memberShipPay', async(req,res)=>{
+      const review = req.body;
+      const result = await memberShipPayCollection.insertOne(review);
+      res.send(result)
+    })
+
+
+
 
 
     app.get('/create-payment-intent',async(req,res)=>{
