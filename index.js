@@ -40,9 +40,7 @@ async function run() {
     const reviewsCollection = client.db("finalProjectDB").collection("reviews");
     const upcommingCollection = client.db("finalProjectDB").collection("upcomming");
     const cardCollection = client.db("finalProjectDB").collection("card");
-
-
-
+    const memberShipCollection = client.db("finalProjectDB").collection("memberShip");
 
 
     // jwt api
@@ -239,6 +237,30 @@ async function run() {
       const result = await reviewsCollection.find().toArray()
       res.send(result)
     })
+
+
+    // memberShip
+
+    // app.post('/memberShipp',async(req,res)=>{
+    //   const membership = req.body;
+    //   const result = await memberShipCollection.insertOne(membership)
+    //   res.send(result)
+
+    // })
+
+    app.get('/memberShipp',async(req,res)=>{
+      const result = await memberShipCollection.find().toArray()
+      console.log(result);
+      res.send(result)
+    })
+
+
+
+
+
+
+
+
 
     // payment
     app.post('/create-payment-intent', async (req, res) => {
