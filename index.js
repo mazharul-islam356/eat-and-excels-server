@@ -20,7 +20,8 @@ app.use(express.json())
 
 
 
-const uri = "mongodb+srv://mazharulislam3569:kFXUW2zYOblz9t28@cluster0.2amgiws.mongodb.net/?retryWrites=true&w=majority";
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2amgiws.mongodb.net/?retryWrites=true&w=majority`;
+
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -76,7 +77,7 @@ async function run() {
       const verifyAdmin = async (req, res, next) => {
         const email = req.decoded.email;
         const query = { email: email };
-        const user = await userCollection.findOne(query);
+        const user = await usersCollection.findOne(query);
         const isAdmin = user?.role === 'admin';
         if (!isAdmin) {
           return res.status(403).send({ message: 'forbidden access' });
@@ -99,14 +100,14 @@ async function run() {
 
 
     // user api
-    app.get('/users', verifyToken, verifyAdmin,  async(req,res)=>{
+    app.get('/users', verifyToken,   async(req,res)=>{
       const result = await usersCollection.find().toArray()
       res.send(result)
     })
 
 
     // delete
-    app.delete("/allData/:id",verifyAdmin, async (req, res) => {
+    app.delete("/allData/:id", async (req, res) => {
       const id = req.params.id;
       console.log("id", id);
       const query = {
@@ -122,7 +123,7 @@ async function run() {
 
 
 
-    app.get('/users/admin/:email',verifyToken,verifyAdmin, async(req,res)=>{
+    app.get('/users/admin/:email',verifyToken, async(req,res)=>{
       const email = req.params.email
       if(email !== req.decoded.email){
         return res.status(403).send({message: 'forbidden access'})
@@ -142,7 +143,7 @@ async function run() {
 
 
 
-    app.post('/users',verifyAdmin,verifyToken, async(req,res)=>{
+    app.post('/users',verifyToken, async(req,res)=>{
       const user = req.body
       // insert email if user dose not exist
       const query = {email: user.email}
@@ -154,7 +155,7 @@ async function run() {
       res.send(result)
     })
 
-    app.patch('/users/admin/:id',verifyAdmin, async(req,res)=>{
+    app.patch('/users/admin/:id',verifyToken, async(req,res)=>{
       const id = req.params.id;
       const query = { _id: new ObjectId(id)}
       const updateDocs = {
@@ -329,14 +330,14 @@ async function run() {
     // like
 
     app.put('/like',async (req,res)=>{
-      const id = req.params.id;
+      const id = req.body
         const query = { _id: new ObjectId(id) };
         const updateReviewLike = {
           $inc: {
-            id: 1,
+            like: 1,
           },
         };
-        const result = await reviewsCollection.updateOne(
+        const result = await allDataCollection.updateOne(
           query,
           updateReviewLike
         );
