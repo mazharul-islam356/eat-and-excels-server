@@ -41,7 +41,8 @@ async function run() {
     const upcommingCollection = client.db("finalProjectDB").collection("upcomming");
     const cardCollection = client.db("finalProjectDB").collection("card");
     const memberShipCollection = client.db("finalProjectDB").collection("memberShip");
-    const memberShipPayCollection = client.db("finalProjectDB").collection("memberShipPay");
+    const PayCollection = client.db("finalProjectDB").collection("Pay");
+    const sendCollection = client.db("finalProjectDB").collection("send");
 
 
     // jwt api
@@ -71,29 +72,41 @@ async function run() {
 
     }
 
+      // verify admin
+      const verifyAdmin = async (req, res, next) => {
+        const email = req.decoded.email;
+        const query = { email: email };
+        const user = await userCollection.findOne(query);
+        const isAdmin = user?.role === 'admin';
+        if (!isAdmin) {
+          return res.status(403).send({ message: 'forbidden access' });
+        }
+        next();
+      }
+
 
     // verify admin
-    const verifyAdmin = async (req,res,next) =>{
-      const email = req.decoded.email;
-      const query = { email: email };
-      const user = await usersCollection.findOne(query)
-      const isAdmin = user?.role === 'admin'
+    // const verifyAdmin = async (req,res,next) =>{
+    //   const email = req.decoded.email;
+    //   const query = { email: email };
+    //   const user = await usersCollection.findOne(query)
+    //   const isAdmin = user?.role === 'admin'
      
-      if(!isAdmin){
-        return res.status(403).send({ message: 'forbidden access' })
-      }
-    }
+    //   if(!isAdmin){
+    //     return res.status(403).send({ message: 'forbidden access' })
+    //   }
+    // }
 
 
     // user api
-    app.get('/users', verifyToken,   async(req,res)=>{
+    app.get('/users', verifyToken, verifyAdmin,  async(req,res)=>{
       const result = await usersCollection.find().toArray()
       res.send(result)
     })
 
-    
+
     // delete
-    app.delete("/allData/:id", async (req, res) => {
+    app.delete("/allData/:id",verifyAdmin, async (req, res) => {
       const id = req.params.id;
       console.log("id", id);
       const query = {
@@ -109,7 +122,7 @@ async function run() {
 
 
 
-    app.get('/users/admin/:email',verifyToken, async(req,res)=>{
+    app.get('/users/admin/:email',verifyToken,verifyAdmin, async(req,res)=>{
       const email = req.params.email
       if(email !== req.decoded.email){
         return res.status(403).send({message: 'forbidden access'})
@@ -129,7 +142,7 @@ async function run() {
 
 
 
-    app.post('/users', async(req,res)=>{
+    app.post('/users',verifyAdmin,verifyToken, async(req,res)=>{
       const user = req.body
       // insert email if user dose not exist
       const query = {email: user.email}
@@ -141,7 +154,7 @@ async function run() {
       res.send(result)
     })
 
-    app.patch('/users/admin/:id', async(req,res)=>{
+    app.patch('/users/admin/:id',verifyAdmin, async(req,res)=>{
       const id = req.params.id;
       const query = { _id: new ObjectId(id)}
       const updateDocs = {
@@ -291,12 +304,44 @@ async function run() {
 
 
 
-    app.get('/create-payment-intent',async(req,res)=>{
-      const result = await cardCollection.find().toArray()
+    app.post('payments',async(req,res)=>{
+      const payment = req.body;
+      const paymentResult = await PayCollection.insertOne(payment)
+      console.log('pay info', payment);
+      res.send(paymentResult)
+    })
+
+
+    // send
+
+    app.post('/send',async(req,res)=>{
+      const send = req.body;
+      const sendResult = await sendCollection.insertOne(send)
+      res.send(sendResult)
+    })
+
+    app.get('/send',async(req,res)=>{
+      const result = await sendCollection.find().toArray()
       res.send(result)
     })
 
 
+    // like
+
+    app.put('/like',async (req,res)=>{
+      const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const updateReviewLike = {
+          $inc: {
+            id: 1,
+          },
+        };
+        const result = await reviewsCollection.updateOne(
+          query,
+          updateReviewLike
+        );
+        res.send(result);
+    })
 
 
     
