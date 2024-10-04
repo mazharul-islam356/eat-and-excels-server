@@ -86,18 +86,6 @@ async function run() {
       }
 
 
-    // verify admin
-    // const verifyAdmin = async (req,res,next) =>{
-    //   const email = req.decoded.email;
-    //   const query = { email: email };
-    //   const user = await usersCollection.findOne(query)
-    //   const isAdmin = user?.role === 'admin'
-     
-    //   if(!isAdmin){
-    //     return res.status(403).send({ message: 'forbidden access' })
-    //   }
-    // }
-
 
     // user api
     app.get('/users', verifyToken,   async(req,res)=>{
@@ -118,12 +106,9 @@ async function run() {
       res.send(result);
     });
 
-   
 
 
-
-
-    app.get('/users/admin/:email',verifyToken, async(req,res)=>{
+    app.get('/users/admin/:email', verifyToken, async(req,res)=>{
       const email = req.params.email
       if(email !== req.decoded.email){
         return res.status(403).send({message: 'forbidden access'})
@@ -141,9 +126,7 @@ async function run() {
     })
 
 
-
-
-    app.post('/users',verifyToken, async(req,res)=>{
+    app.post('/users', async(req,res)=>{
       const user = req.body
       // insert email if user dose not exist
       const query = {email: user.email}
@@ -300,8 +283,6 @@ async function run() {
       const result = await memberShipPayCollection.insertOne(review);
       res.send(result)
     })
-
-
 
 
 
