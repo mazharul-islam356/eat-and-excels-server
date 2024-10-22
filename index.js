@@ -237,15 +237,6 @@ async function run() {
     })
 
 
-    // memberShip
-
-    // app.post('/memberShipp',async(req,res)=>{
-    //   const membership = req.body;
-    //   const result = await memberShipCollection.insertOne(membership)
-    //   res.send(result)
-
-    // })
-
 
 
     app.get('/memberShipp', async (req, res) => {
