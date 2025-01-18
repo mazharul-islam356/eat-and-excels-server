@@ -15,11 +15,6 @@ app.use(express.json())
 
 
 
-// mazharulislam3569
-// kFXUW2zYOblz9t28
-
-
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2amgiws.mongodb.net/?retryWrites=true&w=majority`;
 
 
@@ -162,6 +157,7 @@ async function run() {
     });
 
     app.get('/allData',async(req,res)=>{
+      console.log(req);
       const result = await allDataCollection.find().toArray()
       res.send(result)
     })
